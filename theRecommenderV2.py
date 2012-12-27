@@ -20,7 +20,7 @@ from bottle import default_app
 mainDataPath = './clientInformation'
 mainResultPath = './trainedData'
 #dataSource = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/data/LDOScontextTRAINnoLAST.txt' #make "empty" default, this one is just for testing
-validationDataSource = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/data/MovieATcontextTEST2.txt'
+#validationDataSource = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/data/MovieATcontextTEST2.txt'
 
 
 #userBiasesResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/userBias.txt'
