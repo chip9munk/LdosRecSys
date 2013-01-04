@@ -62,13 +62,13 @@ def getRequestForRecSys():
 	if functionName == 'getTopN_MF': rez = getTopN_MF(request.forms.get('clientID'),int(request.forms.get('userID')),int(request.forms.get('N')), context)
 	elif functionName == 'getRating_MF': rez = getRating_MF(request.forms.get('clientID'),int(request.forms.get('userID')), int(request.forms.get('itemID')),context)
 	elif functionName == 'getBottomN_MF': rez = getBottomN_MF(request.forms.get('clientID'),int(request.forms.get('userID')),int(request.forms.get('N')), context)
-	elif functionName == 'getRandomItems': rez = getRandomItems(request.forms.get('clientID'),int(request.forms.get('N')))
+	elif functionName == 'getRandomItems': rez = getRandomItems_fromSubSet(request.forms.get('clientID'),int(request.forms.get('N')), int(request.forms.get('subSet')))
 	elif functionName == 'getDiverseN': 
 		initialSetIds = request.forms.get('initialSetIds')
 		initialSetIds=initialSetIds.split(',')
 		initialSetIds=[int(i) for i in initialSetIds]
-		rez = getDiverseN(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')))
-	elif functionName == 'getSimilarN': rez = getSimilarN(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')))
+		rez = getDiverseN_fromSubSet(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')))
+	elif functionName == 'getSimilarN': rez = getSimilarN_fromSubSet(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')),int(request.forms.get('subSet')))
 	
 	
 	else: rez = 'No function!!'
@@ -90,6 +90,9 @@ def trainRecSys():
 	elif functionName == 'initialize': 
 		initializeClientConfFile (request.forms.get('clientID'), request.forms.get('contextType'))
 		rez = 'Initialization completed!'
+	elif functionName == 'initializeSubSet': 
+		initializeItemSubset (request.forms.get('clientID'))
+		rez = 'Items subset initialization completed!'
 	else: rez = 'No function!!'
 	
 	
@@ -216,6 +219,20 @@ def initializeClientConfFile (clientName, contextType):
     with open(confFileName, 'w') as configfile:
         config.write(configfile)
     
+def initializeItemSubset(clientName):
+    
+    subSetIDfile = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+    subSetIDs=numpy.loadtxt(subSetIDfile)
+    getFeaturesFromTxt(clientName)
+    
+    itemFeaturesSubSet = numpy.zeros(numpy.shape(itemFeaturesMatrix))
+    
+    for i in range(len(subSetIDs)):
+        itemFeaturesSubSet[subSetIDs[i],:] = itemFeaturesMatrix[subSetIDs[i],:]
+       
+    itemFeaturesSubSetFilename = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+    numpy.savetxt(itemFeaturesSubSetFilename,itemFeaturesSubSet,delimiter=';')   
+	
 ####################################################################################################
 
 ######################################## SET FUNCTIONS ##################################################
@@ -530,6 +547,154 @@ def getSimilarN(clientName, initialItemId, n):
     
     # get coordinates of input item
     initialItemCoords = itemFeaturesMatrix[initialItemId, 0:2]
+    
+    # calculate all distances
+    for i in range(len(sourceSet)):
+        x=numpy.array((sourceSet[i,1:3]))
+        y=numpy.array((initialItemCoords))
+        distances[i,1] = numpy.linalg.norm(x-y)
+        distances[i,0] = sourceSet[i,0]
+            
+    #sort distances and take n smallest    
+    distances=distances[distances[:,1].argsort()]
+    resultList = distances[0:n,0]
+    
+    return resultList
+
+def getRandomItems_fromSubSet (clientName, n, subSet):
+    # initialize result list
+    resultList = numpy.zeros(n)
+    if subSet == 0:
+        # get items' ids from conf File
+        confFileName = mainDataPath + '/' + clientName + '.cfg'
+        config = configparser.RawConfigParser()
+        config.read(confFileName)
+        itemIDs = config.get('dataInfo', 'itemids')
+    
+        # turn itemIDs string into list of integers
+        itemIDs=itemIDs[1:len(itemIDs)-1]
+        itemIDs=itemIDs.split(', ')
+        itemIDs=[int(i) for i in itemIDs]
+    elif subSet == 1:
+        #subSetFileName = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+        subSetIDsFileName = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+        itemIDs = numpy.loadtxt(subSetIDsFileName, delimiter=';')
+    
+    # get random permutation
+    rand=numpy.random.permutation(len(itemIDs))
+    # select itemIDs based on random permutation    
+    for i in range(n):
+        resultList[i] = itemIDs[rand[i]]
+    
+    return resultList
+
+def getDiverseN_fromSubSet(clientName, initialSetIds, n, subSet):
+    
+    resultList = numpy.zeros(n)
+    
+    if subSet ==0:
+        getFeaturesFromTxt(clientName)
+      
+        # read from configuration file  
+        confFileName = mainDataPath + '/' + clientName + '.cfg'
+        config = configparser.RawConfigParser()
+        config.read(confFileName)
+        itemIDs = config.get('dataInfo', 'itemids')
+    
+        # turn itemIDs string into list of integers
+        itemIDs=itemIDs[1:len(itemIDs)-1]
+        itemIDs=itemIDs.split(', ')
+        itemIDs=[int(i) for i in itemIDs]
+        
+        itemFeaturesMatrixFinal = itemFeaturesMatrix
+        
+        
+    elif subSet==1:
+        subSetIDsFileName = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+        itemIDs = numpy.loadtxt(subSetIDsFileName, delimiter=';')
+        subSetFeaturesFileName = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+        itemFeaturesSubSetMatrix = numpy.loadtxt(subSetFeaturesFileName, delimiter=';')
+        
+        itemFeaturesMatrixFinal = itemFeaturesSubSetMatrix
+    
+    
+        # prepare the set of items other than initial  
+    sourceSet = numpy.zeros([len(itemIDs),3])
+    for i in range(len(itemIDs)):
+        sourceSet[i,0]= itemIDs[i]
+        sourceSet[i,1]= itemFeaturesMatrixFinal[itemIDs[i],0]
+        sourceSet[i,2]= itemFeaturesMatrixFinal[itemIDs[i],1]
+        
+    
+    
+    for i in range(len(initialSetIds)):     
+        sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==initialSetIds[i])[0], 0)
+        
+    numOfSelected=0
+    group = initialSetIds
+    
+    while numOfSelected < n:
+        distances = numpy.zeros([len(group)])
+        finalDistances = numpy.zeros([numpy.shape(sourceSet)[0]]) 
+        for i in range(numpy.shape(sourceSet)[0]):
+            for j in range(len(group)):
+                x=numpy.array((itemFeaturesMatrixFinal[group[j], 0:2]))
+                y=numpy.array((sourceSet[i,1:3]))
+                distances[j] = numpy.linalg.norm(x-y)
+            
+            finalDistances[i]= math.sqrt(sum(numpy.power(distances,2)))
+        indexOfMax = numpy.argmax(finalDistances)
+        
+        selectedItemId = sourceSet[indexOfMax,0]
+        
+        group = numpy.append(group, selectedItemId)
+        resultList[numOfSelected] = selectedItemId
+        numOfSelected = numOfSelected + 1
+        sourceSet=numpy.delete(sourceSet, indexOfMax,0)
+    return resultList
+    
+def getSimilarN_fromSubSet(clientName, initialItemId, n,subSet):
+    # get features
+    
+    initialItemId = int(initialItemId)
+    if subSet ==0:
+        getFeaturesFromTxt(clientName)
+      
+        # read from configuration file  
+        confFileName = mainDataPath + '/' + clientName + '.cfg'
+        config = configparser.RawConfigParser()
+        config.read(confFileName)
+        itemIDs = config.get('dataInfo', 'itemids')
+    
+        # turn itemIDs string into list of integers
+        itemIDs=itemIDs[1:len(itemIDs)-1]
+        itemIDs=itemIDs.split(', ')
+        itemIDs=[int(i) for i in itemIDs]
+    
+        itemFeaturesMatrixFinal = itemFeaturesMatrix
+    
+    elif subSet==1:
+        subSetIDsFileName = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+        itemIDs = numpy.loadtxt(subSetIDsFileName, delimiter=';')
+        subSetFeaturesFileName = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+        itemFeaturesSubSetMatrix = numpy.loadtxt(subSetFeaturesFileName, delimiter=';')
+        
+        itemFeaturesMatrixFinal = itemFeaturesSubSetMatrix
+    
+    
+    # prepare the set of items other than initial  
+    sourceSet = numpy.zeros([len(itemIDs),3])
+    for i in range(len(itemIDs)):
+        sourceSet[i,0]= itemIDs[i]
+        sourceSet[i,1]= itemFeaturesMatrixFinal[itemIDs[i],0]
+        sourceSet[i,2]= itemFeaturesMatrixFinal[itemIDs[i],1]
+    sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==initialItemId)[0], 0)
+        
+    # prepare the matrix for distances
+    distances = numpy.zeros([numpy.shape(sourceSet)[0],2])
+    
+    # get coordinates of input item
+    initialItemCoords = itemFeaturesMatrixFinal[initialItemId, 0:2]
     
     # calculate all distances
     for i in range(len(sourceSet)):

@@ -1,0 +1,151 @@
+ <html>
+    <head><title>Test forms to python</title></head>
+    <body>
+    <fieldset>
+	<legend>CLIENT SIDE</legend>
+    <form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Predict rating for userID and itemID</legend>
+		<input type="hidden" name="fName" value="getRating_MF">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		userID: <input type="text" name="userID"><br>
+		itemID: <input type="text" name="itemID"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+    <form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Get top N items for userID</legend>
+		<input type="hidden" name="fName" value="getTopN_MF">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		userID: <input type="text" name="userID"><br>
+		number of items: <input type="text" name="N"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+    <form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Get bottom N items for userID</legend>
+		<input type="hidden" name="fName" value="getBottomN_MF">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		userID: <input type="text" name="userID"><br>
+		number of items: <input type="text" name="N"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Get Random Items</legend>
+		<input type="hidden" name="fName" value="getRandomItems">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		Items set: <select name="subSet">
+			<option value="0">All movies</option>
+			<option value="1">Subset of movies</option>
+		</select><br>
+		number of items: <input type="text" name="N"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Get Similar Items</legend>
+		<input type="hidden" name="fName" value="getSimilarN">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		Items set: <select name="subSet">
+			<option value="0">All movies</option>
+			<option value="1">Subset of movies</option>
+		</select><br>
+		initialItem: <input type="text" name="initialSetId"><br>
+		number of items: <input type="text" name="N"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://localhost/recsys" method="post">
+	<fieldset>
+	<legend>Get Diverse Items</legend>
+		<input type="hidden" name="fName" value="getDiverseN">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		Items set: <select name="subSet">
+			<option value="0">All movies</option>
+			<option value="1">Subset of movies</option>
+		</select><br>
+		initialItems: <input type="text" name="initialSetIds"><br>
+		number of items: <input type="text" name="N"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	</fieldset>
+	
+	<fieldset>
+	<legend>PROVIDER SIDE</legend>
+    <form name="input" action="http://localhost/operate" method="post">
+	<fieldset>
+	<legend>Initialize dataset</legend>
+		<input type="hidden" name="fName" value="initialize">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+			<option value="smalldb">Smalldb</option>
+		</select><br>
+		Model type: <select name="contextType">
+			<option value="no">Basic mf</option>
+			<option value="multiple">Multiple context mf</option>
+		</select><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://localhost/operate" method="post">
+	<fieldset>
+	<legend>Train mf</legend>
+		<input type="hidden" name="fName" value="train">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+			<option value="smalldb">Smalldb</option>
+		</select><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://localhost/operate" method="post">
+	<fieldset>
+	<legend>Initialize subset of movies</legend>
+		<input type="hidden" name="fName" value="initializeSubSet">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+			<option value="smalldb">Smalldb</option>
+		</select><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	</fieldset>
+	
+	
+	</body>
+    </html>
