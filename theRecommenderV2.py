@@ -77,27 +77,22 @@ def getRequestForRecSys():
 
 @post('/operate')
 def trainRecSys():
-		
-	functionName = 	request.forms.get('fName')
-	
-		
-	if functionName == 'train': 
-		train_MF(request.forms.get('clientID')) 
-		rez = 'Training completed!'
-	elif functionName == 'validate': 
-		validate_MF(request.forms.get('clientID'))
-		rez = 'Validation completed!'
-	elif functionName == 'initialize': 
-		initializeClientConfFile (request.forms.get('clientID'), request.forms.get('contextType'))
-		rez = 'Initialization completed!'
-	elif functionName == 'initializeSubSet': 
-		initializeItemSubset (request.forms.get('clientID'))
-		rez = 'Items subset initialization completed!'
-	else: rez = 'No function!!'
-	
-	
-	
-	return rez
+    functionName = 	request.forms.get('fName')
+    
+    if functionName == 'train': 
+        train_MF(request.forms.get('clientID')) 
+        rez = 'Training completed!'
+    elif functionName == 'validate': 
+        validate_MF(request.forms.get('clientID'))
+        rez = 'Validation completed!'
+    elif functionName == 'initialize': 
+        initializeClientConfFile (request.forms.get('clientID'), request.forms.get('contextType'))
+        rez = 'Initialization completed!'
+    elif functionName == 'initializeSubSet': 
+        initializeItemSubset (request.forms.get('clientID'))
+        rez = 'Items subset initialization completed!'
+    else: rez = 'No function!!'
+    return rez
 
 
 ######################################## CLIENT FUNCTIONS ##########################################
@@ -169,7 +164,7 @@ def initializeClientConfFile (clientName, contextType):
     config.read(confFileName)
     datasetName = config.get('dataPath', 'datasetName')
     #return confFileName
-	
+    
     dataSet=numpy.loadtxt(datasetName, delimiter=';')
     # get dataset information
     numOfItems = len(numpy.unique(dataSet[:,1]))
@@ -220,7 +215,6 @@ def initializeClientConfFile (clientName, contextType):
         config.write(configfile)
     
 def initializeItemSubset(clientName):
-    
     subSetIDfile = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
     subSetIDs=numpy.loadtxt(subSetIDfile)
     getFeaturesFromTxt(clientName)
@@ -229,7 +223,7 @@ def initializeItemSubset(clientName):
     
     for i in range(len(subSetIDs)):
         itemFeaturesSubSet[subSetIDs[i],:] = itemFeaturesMatrix[subSetIDs[i],:]
-       
+        
     itemFeaturesSubSetFilename = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
     numpy.savetxt(itemFeaturesSubSetFilename,itemFeaturesSubSet,delimiter=';')   
 	
