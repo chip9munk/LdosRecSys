@@ -67,7 +67,7 @@ def getRequestForRecSys():
 		initialSetIds = request.forms.get('initialSetIds')
 		initialSetIds=initialSetIds.split(',')
 		initialSetIds=[int(i) for i in initialSetIds]
-		rez = getDiverseN_fromSubSet(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')))
+		rez = getDiverse4_fromSubSet_Vodlan(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')))
 	elif functionName == 'getSimilarN': rez = getSimilarN_fromSubSet(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')),int(request.forms.get('subSet')))
 	
 	
@@ -696,6 +696,150 @@ def getSimilarN_fromSubSet(clientName, initialItemId, n,subSet):
         y=numpy.array((initialItemCoords))
         distances[i,1] = numpy.linalg.norm(x-y)
         distances[i,0] = sourceSet[i,0]
+            
+    #sort distances and take n smallest    
+    distances=distances[distances[:,1].argsort()]
+    resultList = distances[0:n,0]
+    
+    return resultList
+    
+def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet):
+    
+    resultList = numpy.zeros(n)
+    
+    if subSet ==0:
+        getFeaturesFromTxt(clientName)
+      
+        # read from configuration file  
+        confFileName = mainDataPath + '/' + clientName + '.cfg'
+        config = configparser.RawConfigParser()
+        config.read(confFileName)
+        itemIDs = config.get('dataInfo', 'itemids')
+    
+        # turn itemIDs string into list of integers
+        itemIDs=itemIDs[1:len(itemIDs)-1]
+        itemIDs=itemIDs.split(', ')
+        itemIDs=[int(i) for i in itemIDs]
+        
+        itemFeaturesMatrixFinal = itemFeaturesMatrix
+        
+        
+    elif subSet==1:
+        subSetIDsFileName = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+        itemIDs = numpy.loadtxt(subSetIDsFileName, delimiter=';')
+        subSetFeaturesFileName = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+        itemFeaturesSubSetMatrix = numpy.loadtxt(subSetFeaturesFileName, delimiter=';')
+        
+        itemFeaturesMatrixFinal = itemFeaturesSubSetMatrix
+    
+    
+        # prepare the set of items other than initial  
+    sourceSet = numpy.zeros([len(itemIDs),3])
+    for i in range(len(itemIDs)):
+        sourceSet[i,0]= itemIDs[i]
+        sourceSet[i,1]= itemFeaturesMatrixFinal[itemIDs[i],0]
+        sourceSet[i,2]= itemFeaturesMatrixFinal[itemIDs[i],1]
+    
+    
+    initialItemData = numpy.zeros([len(initialSetIds),3])
+    for i in range(len(initialItemData)):
+        initialItemData[i,:] =sourceSet[numpy.where(sourceSet[:,0]==initialSetIds[i])[0][0],:]
+    
+    for i in range(len(initialSetIds)):     
+               
+        sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==initialSetIds[i])[0], 0)
+        
+        
+        simItems = getSimilarItems_fromList(sourceSet, initialItemData[i], 10)
+        for j in simItems:
+            sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==j)[0], 0)
+            
+       
+    quad1 = numpy.zeros([3])
+    quad2 = numpy.zeros([3])
+    quad3 = numpy.zeros([3])
+    quad4 = numpy.zeros([3])
+    
+    
+    for i in range(len(sourceSet)):   
+        axisX = sourceSet[i,1]
+        axisY = sourceSet[i,2]
+        
+        if axisX>0.06  and  axisY >0.035:
+            quad1 = numpy.vstack([quad1, sourceSet[i,:]])
+        elif axisX<0.06  and  axisY >0.035:
+            quad2 = numpy.vstack([quad2, sourceSet[i,:]])
+        elif axisX<0.06  and  axisY <0.035:
+            quad3 = numpy.vstack([quad3, sourceSet[i,:]])
+        else:
+            quad4 = numpy.vstack([quad4, sourceSet[i,:]])
+        
+    quad1=numpy.delete(quad1, [0], 0)
+    quad2=numpy.delete(quad2, [0], 0)
+    quad3=numpy.delete(quad3, [0], 0)
+    quad4=numpy.delete(quad4, [0], 0)
+            
+            
+            
+    orderOfQuadrants = numpy.random.permutation(4)
+    orderOfQuadrants=orderOfQuadrants+1
+       
+    for i in orderOfQuadrants:
+        if i == 1:
+            selected =  getRandomItems_fromList (quad1[:,0], 1)
+        elif i == 2:
+            selected =  getRandomItems_fromList (quad2[:,0], 1)
+        elif i == 3:
+            selected =  getRandomItems_fromList (quad3[:,0], 1)
+        elif i == 4:
+            selected =  getRandomItems_fromList (quad4[:,0], 1)
+            
+        resultList[i-1] =  selected
+        
+        initItemData =sourceSet[numpy.where(sourceSet[:,0]==selected)[0][0],:]
+        simItems = getSimilarItems_fromList(sourceSet, initItemData, 10)
+        for j in simItems:
+            if quad1.shape[0] > 1:
+                quad1=numpy.delete(quad1, numpy.where(quad1[:,0]==j)[0], 0)
+            if quad2.shape[0] > 1:
+                quad2=numpy.delete(quad2, numpy.where(quad2[:,0]==j)[0], 0)
+            if quad3.shape[0] > 1:
+                quad3=numpy.delete(quad3, numpy.where(quad3[:,0]==j)[0], 0)
+            if quad4.shape[0] > 1:
+                quad4=numpy.delete(quad4, numpy.where(quad4[:,0]==j)[0], 0)
+            
+            
+        
+        
+        
+        
+    return resultList
+        
+    
+def getRandomItems_fromList (fromList, n):
+    rand=numpy.random.permutation(len(fromList))
+    # select itemIDs based on random permutation    
+    resultList = numpy.zeros(n)
+    for i in range(n):
+        resultList[i] = fromList[rand[i]]
+    
+    return resultList
+    
+    
+def getSimilarItems_fromList(fromListData, initialItemData, n):
+                
+    # prepare the matrix for distances
+    distances = numpy.zeros([numpy.shape(fromListData)[0],2])
+    
+    # get coordinates of input item
+    initialItemCoords = initialItemData[1:2]
+    
+    # calculate all distances
+    for i in range(len(fromListData)):
+        x=numpy.array((fromListData[i,1:3]))
+        y=numpy.array((initialItemCoords))
+        distances[i,1] = numpy.linalg.norm(x-y)
+        distances[i,0] = fromListData[i,0]
             
     #sort distances and take n smallest    
     distances=distances[distances[:,1].argsort()]
