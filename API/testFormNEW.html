@@ -82,6 +82,25 @@
 	
 	<form name="input" action="http://slavnik.fe.uni-lj.si/myapp/recsys" method="post">
 	<fieldset>
+	<legend>Get Similar Items with avoidance</legend>
+		<input type="hidden" name="fName" value="getSimilarNavoid">
+		Client: <select name="clientID">
+			<option value="comoda">CoMoDa</option>
+			<option value="movieat">MovieAT</option>
+		</select><br>
+		Items set: <select name="subSet">
+			<option value="0">All movies</option>
+			<option value="1">Subset of movies</option>
+		</select><br>
+		initialItem: <input type="text" name="initialSetId"><br>
+		number of items: <input type="text" name="N"><br>
+		avoidItems: <input type="text" name="avoidSetIds"><br>
+		<input type="submit" value="Submit">
+	</fieldset>
+	</form>
+	
+	<form name="input" action="http://slavnik.fe.uni-lj.si/myapp/recsys" method="post">
+	<fieldset>
 	<legend>Get Diverse Items</legend>
 		<input type="hidden" name="fName" value="getDiverseN">
 		Client: <select name="clientID">

@@ -19,17 +19,7 @@ from bottle import default_app
 # data paths
 mainDataPath = './clientInformation'
 mainResultPath = './trainedData'
-#dataSource = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/data/LDOScontextTRAINnoLAST.txt' #make "empty" default, this one is just for testing
-#validationDataSource = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/data/MovieATcontextTEST2.txt'
 
-
-#userBiasesResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/userBias.txt'
-#itemBiasesResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/itemBias.txt'
-#globalBiasResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/globalBias.txt'
-#userFeaturesResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/userFeatures.txt'
-#itemFeaturesResult = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/itemFeatures.txt'
-#userFeaturesResultMultiple = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/userFeaturesMultiple.txt'
-#itemFeaturesResultMultiple = 'D:/00xBeds/17-TheRecommenderSystem/workspace/The RecommenderProject/results/itemFeaturesMultiple.txt'
 
 # global matrices
 userBiasesMatrix = 0
@@ -65,10 +55,15 @@ def getRequestForRecSys():
 	elif functionName == 'getRandomItems': rez = getRandomItems_fromSubSet(request.forms.get('clientID'),int(request.forms.get('N')), int(request.forms.get('subSet')))
 	elif functionName == 'getDiverseN': 
 		initialSetIds = request.forms.get('initialSetIds')
-		initialSetIds=initialSetIds.split(',')
-		initialSetIds=[int(i) for i in initialSetIds]
+		initialSetIds = initialSetIds.split(',')
+		initialSetIds = [int(i) for i in initialSetIds]
 		rez = getDiverse4_fromSubSet_Vodlan(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')))
 	elif functionName == 'getSimilarN': rez = getSimilarN_fromSubSet(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')),int(request.forms.get('subSet')))
+	elif functionName == 'getSimilarNavoid': 
+		avoidSetIds = request.forms.get('avoidSetIds')
+		avoidSetIds = avoidSetIds.split(',')
+		avoidSetIds = [int(i) for i in avoidSetIds]
+		rez = rez = getSimilarN_fromSubSet_avoid(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')),int(request.forms.get('subSet')), avoidSetIds)
 	
 	
 	else: rez = 'No function!!'
@@ -808,10 +803,6 @@ def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet):
             if quad4.shape[0] > 1:
                 quad4=numpy.delete(quad4, numpy.where(quad4[:,0]==j)[0], 0)
             
-            
-        
-        
-        
         
     return resultList
         
@@ -846,6 +837,68 @@ def getSimilarItems_fromList(fromListData, initialItemData, n):
     resultList = distances[0:n,0]
     
     return resultList
+	
+def getSimilarN_fromSubSet_avoid(clientName, initialItemId, n, subSet, avoidSetIDs):
+    # get features
+    
+    initialItemId = int(initialItemId)
+    if subSet ==0:
+        getFeaturesFromTxt(clientName)
+      
+        # read from configuration file  
+        confFileName = mainDataPath + '/' + clientName + '.cfg'
+        config = configparser.RawConfigParser()
+        config.read(confFileName)
+        itemIDs = config.get('dataInfo', 'itemids')
+    
+        # turn itemIDs string into list of integers
+        itemIDs=itemIDs[1:len(itemIDs)-1]
+        itemIDs=itemIDs.split(', ')
+        itemIDs=[int(i) for i in itemIDs]
+    
+        itemFeaturesMatrixFinal = itemFeaturesMatrix
+    
+    elif subSet==1:
+        subSetIDsFileName = mainDataPath + '/' + clientName + '_subSetOfItems.txt'
+        itemIDs = numpy.loadtxt(subSetIDsFileName, delimiter=';')
+        subSetFeaturesFileName = mainResultPath + '/' + clientName + '_itemFeaturesSubSet.txt'
+        itemFeaturesSubSetMatrix = numpy.loadtxt(subSetFeaturesFileName, delimiter=';')
+        
+        itemFeaturesMatrixFinal = itemFeaturesSubSetMatrix
+    
+    
+    # prepare the set of items other than initial  
+    sourceSet = numpy.zeros([len(itemIDs),3])
+    for i in range(len(itemIDs)):
+        sourceSet[i,0]= itemIDs[i]
+        sourceSet[i,1]= itemFeaturesMatrixFinal[itemIDs[i],0]
+        sourceSet[i,2]= itemFeaturesMatrixFinal[itemIDs[i],1]
+    sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==initialItemId)[0], 0)
+        
+         
+    #delete avoid items
+    for j in avoidSetIDs:
+        sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==j)[0], 0)
+        
+    # prepare the matrix for distances
+    distances = numpy.zeros([numpy.shape(sourceSet)[0],2])
+    
+    # get coordinates of input item
+    initialItemCoords = itemFeaturesMatrixFinal[initialItemId, 0:2]
+    
+    # calculate all distances
+    for i in range(len(sourceSet)):
+        x=numpy.array((sourceSet[i,1:3]))
+        y=numpy.array((initialItemCoords))
+        distances[i,1] = numpy.linalg.norm(x-y)
+        distances[i,0] = sourceSet[i,0]
+            
+    #sort distances and take n smallest    
+    distances=distances[distances[:,1].argsort()]
+    resultList = distances[0:n,0]
+    
+    return resultList    	
+
 ####################################################################################################
 
 
