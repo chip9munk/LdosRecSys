@@ -897,6 +897,9 @@ def getSimilarN_fromSubSet_avoid(clientName, initialItemId, n, subSet, avoidSetI
     distances=distances[distances[:,1].argsort()]
     resultList = distances[0:n,0]
     
+    ####
+    resultList = [int(i) for i in resultList]
+	
     return resultList    	
 
 ####################################################################################################
