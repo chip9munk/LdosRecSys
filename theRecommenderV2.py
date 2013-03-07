@@ -578,6 +578,7 @@ def getRandomItems_fromSubSet (clientName, n, subSet):
     for i in range(n):
         resultList[i] = itemIDs[rand[i]]
     
+    resultList = [int(i) for i in resultList]
     return resultList
 
 def getDiverseN_fromSubSet(clientName, initialSetIds, n, subSet):
