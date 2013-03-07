@@ -101,8 +101,8 @@
 	
 	<form name="input" action="http://slavnik.fe.uni-lj.si/myapp/recsys" method="post">
 	<fieldset>
-	<legend>Get Diverse Items</legend>
-		<input type="hidden" name="fName" value="getDiverseN">
+	<legend>Get Diverse Items with avoidance</legend>
+		<input type="hidden" name="fName" value="getDiverseNavoid">
 		Client: <select name="clientID">
 			<option value="comoda">CoMoDa</option>
 			<option value="movieat">MovieAT</option>
@@ -113,6 +113,7 @@
 		</select><br>
 		initialItems: <input type="text" name="initialSetIds"><br>
 		number of items: <input type="text" name="N"><br>
+		avoidItems: <input type="text" name="avoidSetIds"><br>
 		<input type="submit" value="Submit">
 	</fieldset>
 	</form>

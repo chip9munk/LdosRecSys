@@ -53,11 +53,14 @@ def getRequestForRecSys():
 	elif functionName == 'getRating_MF': rez = getRating_MF(request.forms.get('clientID'),int(request.forms.get('userID')), int(request.forms.get('itemID')),context)
 	elif functionName == 'getBottomN_MF': rez = getBottomN_MF(request.forms.get('clientID'),int(request.forms.get('userID')),int(request.forms.get('N')), context)
 	elif functionName == 'getRandomItems': rez = getRandomItems_fromSubSet(request.forms.get('clientID'),int(request.forms.get('N')), int(request.forms.get('subSet')))
-	elif functionName == 'getDiverseN': 
+	elif functionName == 'getDiverseNavoid': 
 		initialSetIds = request.forms.get('initialSetIds')
 		initialSetIds = initialSetIds.split(',')
 		initialSetIds = [int(i) for i in initialSetIds]
-		rez = getDiverse4_fromSubSet_Vodlan(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')))
+		avoidSetIds = request.forms.get('avoidSetIds')
+		avoidSetIds = avoidSetIds.split(',')
+		avoidSetIds = [int(i) for i in avoidSetIds]
+		rez = getDiverse4_fromSubSet_Vodlan(request.forms.get('clientID'),initialSetIds,int(request.forms.get('N')),int(request.forms.get('subSet')), avoidSetIds)
 	elif functionName == 'getSimilarN': rez = getSimilarN_fromSubSet(request.forms.get('clientID'),int(request.forms.get('initialSetId')),int(request.forms.get('N')),int(request.forms.get('subSet')))
 	elif functionName == 'getSimilarNavoid': 
 		avoidSetIds = request.forms.get('avoidSetIds')
@@ -698,7 +701,7 @@ def getSimilarN_fromSubSet(clientName, initialItemId, n,subSet):
     
     return resultList
     
-def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet):
+def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet, avoidSetIDs):
     
     resultList = numpy.zeros(n)
     
@@ -744,6 +747,8 @@ def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet):
                
         sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==initialSetIds[i])[0], 0)
         
+        for k in avoidSetIDs:
+            sourceSet=numpy.delete(sourceSet, numpy.where(sourceSet[:,0]==k)[0], 0)
         
         simItems = getSimilarItems_fromList(sourceSet, initialItemData[i], 10)
         for j in simItems:
@@ -803,7 +808,8 @@ def getDiverse4_fromSubSet_Vodlan(clientName, initialSetIds, n, subSet):
             if quad4.shape[0] > 1:
                 quad4=numpy.delete(quad4, numpy.where(quad4[:,0]==j)[0], 0)
             
-        
+       
+    resultList = [int(i) for i in resultList]
     return resultList
         
     
@@ -896,7 +902,7 @@ def getSimilarN_fromSubSet_avoid(clientName, initialItemId, n, subSet, avoidSetI
     #sort distances and take n smallest    
     distances=distances[distances[:,1].argsort()]
     resultList = distances[0:n,0]
-    
+    resultList = [int(i) for i in resultList]
     return resultList    	
 
 ####################################################################################################
